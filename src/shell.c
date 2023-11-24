@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 int getargs(char *cmd, char **argv);
 
@@ -12,7 +13,7 @@ int main() {
 
     while(1) {
         printf("shell> ");
-        scanf("%s", buf);
+        fgets(buf, 256, stdin);
         clearerr(stdin);
         narg = getargs(buf, argv);
 
@@ -30,11 +31,11 @@ int getargs(char *cmd, char **argv) {
     int narg = 0;
 
     while (*cmd) {
-        if (*cmd == ' ' || *cmd == '\t')
+        if (*cmd == ' ' || *cmd == '\n')
             *cmd++ = '\0';
         else {
             argv[narg++] = cmd++;
-            while (*cmd != '\0' && *cmd != ' ' && *cmd != '\t')
+            while (*cmd != '\0' && *cmd != ' ' && *cmd != '\n')
                 cmd++;
         }
     }
