@@ -5,6 +5,11 @@
 #include <sys/stat.h>
 #include <string.h>
 
+/* 
+    아무것도 입력 안했을 때 : 현재 디렉토리
+    argc = 2 일 때는 디렉토리 입력
+    argc = 3 옵션 들어감.
+*/
 void rec(char *dirname) {
     DIR *pdir;
     struct dirent *pde;
@@ -71,8 +76,12 @@ int main(int argc, char *argv[]) {
         ls(argv[1]);
     }
     else if (argc == 3) {
-
+        /*if (strcmp(argv[2], "-a") == 0) {
+            ls
+        }
+        */
     }
+    //rec(argv[1]);
 
     return 0;
 }

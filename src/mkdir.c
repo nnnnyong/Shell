@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <math.h>
 
 int getdirnames(char **argv, char **dirnames) {
     int cnt = 0;
@@ -22,7 +21,7 @@ void makedir(char *argv, mode_t mode) {
     }
 }
 int main(int argc, char *argv[]) {
-    int i;
+    int i, len;
     char ch;
     char *dirnames[256];
     mode_t mode = 0777, mask;
@@ -32,22 +31,20 @@ int main(int argc, char *argv[]) {
     }
     else if (argc == 4) {
         if (strcmp(argv[1], "-m") == 0) {
-            if ((strcmp(argv[2], "000") >= 0) && (strcmp(argv[2], "777") <= 0)) {
-                mask = umask(0000);
-                mode = 0;
-                // 권한 문자열을 8진수로 변환
-                for (i = 0; i < 3; i++) {
-                    ch = argv[2][i];
-                    mode += atoi(&ch) * (int)pow(8, 2 - i);
+            mask = umask(0000); // 마스크 해제
+            mode = 0;
+            len = strlen(argv[2]);
+            // 권한 문자열을 8진수로 변환
+            for (i = 0; i < len; i++) {
+                if (argv[2][i] < '0' || argv[2][i] > 7){
+                    fprintf(stderr, "invalid mode %s\n", argv[2]);
+                    exit(1);
                 }
-                makedir(argv[3], mode);
-                // 원래의 마스크 복구
-                umask(mask);
+                mode = mode * 8 + (argv[2][i] - '0');
             }
-            else {
-                fprintf(stderr, "invalid mode %s\n", argv[2]);
-                exit(1);
-            }
+            makedir(argv[3], mode);
+            // 원래의 마스크 복구
+            umask(mask);
         }
         else {
             fprintf(stderr, "mkdir: invalid option -- %s\n", argv[1]);
