@@ -9,14 +9,13 @@
 void cmd_cd(int argc, char *argv[]);
 int getargs(char *cmd, char **argv);
 int execute_cmd(int narg, char *args[]);
-void redirect(int narg, char *argv[]);
+void redirect(int narg, char *argv[], int index);
 
 int main() {
     char buf[256];
     char *argv[50];
     char path[256];
     int narg;
-    pid_t pid;
 
     while(1) {
         printf("shell> ");
@@ -53,46 +52,50 @@ int getargs(char *cmd, char *argv[]) {
         }
     }
 
-
-
     argv[narg] = NULL;
     return narg;
 }
+void pipeline(char *argv[]) {
 
+}
+int check(char ch, char *argv[], int *index, int narg) {
+    int i;
+    for (i = 0; i < narg; i++) {
+        if (strcmp(argv[i], &ch) == 0) {
+            *index = i;
+            return 1;
+        }
+    }
+    return 0;
+}
 /*
 리다이렉트 명령이 있을 시 리다이렉트
 */
-void redirect(int narg, char *argv[]){
-    int fd, i = 0;
-    for (i = 0; i < narg; i++) {
-        if (strcmp(argv[i], "<") == 0) {
-            if ((fd = open(argv[i + 1], O_RDONLY | O_CREAT, 0644)) == -1) {
-                perror("open");
-                exit(1);
-            }
-            dup2(fd, STDIN_FILENO);
-
-            // 리다이렉트 기호와 파일 이름을 argv에서 삭제
-            memmove(argv + i, argv + i + 2, (narg - i - 1) * sizeof(char *));
-            argv[narg] = NULL;
-            close(fd);
-
-            break;
+void redirect(int narg, char *argv[], int index){
+    int fd;
+    if (strcmp(argv[index], "<") == 0) {
+        if ((fd = open(argv[index + 1], O_RDONLY | O_CREAT, 0644)) == -1) {
+            perror("open");
+            exit(1);
         }
-        if (strcmp(argv[i], ">") == 0) {
-            if ((fd = open(argv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
-                perror("open");
-                exit(1);
-            }
-            dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDIN_FILENO);
 
-            // 리다이렉트 기호와 파일 이름을 argv에서 삭제
-            memmove(argv + i, argv + i + 2, (narg - i - 1) * sizeof(char *));
-            argv[narg] = NULL;
-            close(fd);
-
-            break;
+        // 리다이렉트 기호와 파일 이름을 argv에서 삭제
+        memmove(argv + index, argv + index + 2, (narg - index - 1) * sizeof(char *));
+        argv[narg] = NULL;
+        close(fd);
+    }
+    if (strcmp(argv[index], ">") == 0) {
+        if ((fd = open(argv[index + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
+            perror("open");
+            exit(1);
         }
+        dup2(fd, STDOUT_FILENO);
+
+        // 리다이렉트 기호와 파일 이름을 argv에서 삭제
+        memmove(argv + index, argv + index + 2, (narg - index - 1) * sizeof(char *));
+        argv[narg] = NULL;
+        close(fd);
     }
 }
 void cmd_cd(int argc, char *argv[]) {
@@ -109,18 +112,28 @@ void cmd_cd(int argc, char *argv[]) {
     }
 }
 int execute_cmd(int narg, char *args[]) {
-    int status;
+    int status; // 전역으로?
+    int is_redirect = 0, is_pipe = 0, is_background = 0;
+    int index;
     pid_t pid;
+
+    is_redirect = check('<', args, &index, narg) || check('>', args, &index, narg);
+    is_pipe = check('|', args, &index, narg);
+    is_background = check('&', args, &index, narg);
 
     pid = fork();
     if (pid == 0) {
-        redirect(narg, args);
-        execv(args[0], args); 
+        if (is_pipe == 1) {
+
+        }
+        if (is_redirect == 1) 
+            redirect(narg, args, index);
+        execv(args[0], args);
         perror("exec");
         exit(1);
     }
     else if (pid >0) {
-        waitpid(pid, &status, 0); 
+        waitpid(pid, &status, 0);
     }
     else
         perror("fork failed");
