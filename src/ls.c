@@ -73,15 +73,17 @@ int main(int argc, char *argv[]) {
         ls(".");
     }
     else if (argc == 2) {
-        ls(argv[1]);
+        if (strcmp(argv[1], "-R") == 0) {
+            rec(".");
+        }
+        else
+            ls(argv[1]);
     }
     else if (argc == 3) {
-        /*if (strcmp(argv[2], "-a") == 0) {
-            ls
+        if (strcmp(argv[1], "-R") == 0){
+            rec(argv[2]);
         }
-        */
     }
-    //rec(argv[1]);
 
     return 0;
 }
