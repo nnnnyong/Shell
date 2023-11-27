@@ -6,20 +6,38 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *cmd_list[] = {
+    "ls",
+    "pwd",
+    "rmdir",
+    "mkdir",
+    "cat",
+    "ln",
+    "cp",
+    "mv",
+    "rm"
+};
+char cmdpath[256]; // 쉘, 명령어 실행파일 경로
+char cur_path[256];
+
 void cmd_cd(int argc, char *argv[]);
 int getargs(char *cmd, char **argv);
 int execute_cmd(int narg, char *args[]);
 void redirect(int narg, char *argv[], int index);
 void pipeline(char *argv[], int narg, int index);
+void if_ourcmd(char *argv[]); 
 
 int main() {
     char buf[256];
     char *argv[50];
-    char path[256];
     int narg;
 
+    getcwd(cmdpath, 256);
+    strcpy(cur_path, cmdpath);
+    
     while(1) {
-        printf("shell> ");
+        getcwd(cur_path, 256);
+        printf("shell:%s> ", cur_path);
         fgets(buf, 256, stdin);
         clearerr(stdin);
         narg = getargs(buf, argv);
@@ -29,19 +47,35 @@ int main() {
         }
         else if (strcmp(argv[0], "cd") == 0) {
             cmd_cd(narg, argv);
-            printf("%s\n", getcwd(path, 256));
         } 
         else {
+            if_ourcmd(argv);
             execute_cmd(narg, argv);
         }
-
-
     }
+}
+
+/*
+구현한 명령어인지 확인
+맞다면 명령어 앞에 경로를 붙여줌
+*/
+void if_ourcmd(char *argv[]) {
+    int i;
+    char s[256];
+    strcpy(s, cmdpath);
+    strcat(s, "/");
+
+    for (i = 0; i < 9; i++) {
+        if (strcmp(cmd_list[i], argv[0]) == 0) {
+            strcat(s, argv[0]);
+            argv[0] = s;
+        }
+    }
+    
 }
 
 int getargs(char *cmd, char *argv[]) {
     int narg = 0;
-
 
     while (*cmd) {
         if (*cmd == ' ' || *cmd == '\t' || *cmd == '\n')
@@ -132,7 +166,7 @@ void pipeline(char *argv[], int narg, int index) {
     pid = fork();
     if (pid == 0) {
         dup2(p[1], STDOUT_FILENO);
-        execv(first_argv[0], first_argv);
+        execvp(first_argv[0], first_argv);
     }
     else if (pid > 0) {
         // close(p[1]);
@@ -161,8 +195,7 @@ int execute_cmd(int narg, char *argv[]) {
         }
         if (is_redirect == 1) 
             redirect(narg, argv, index[0]);
-        printf("%d", getpid());
-        execv(argv[0], argv);
+        execvp(argv[0], argv);
         perror("exec");
         exit(1);
     }
