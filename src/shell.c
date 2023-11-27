@@ -17,7 +17,7 @@ char *cmd_list[] = {
     "mv",
     "rm"
 };
-char cmdpath[256]; // 쉘, 명령어 실행파일 경로
+char cmdpath[256]; // 명령어 실행파일 경로
 char cur_path[256];
 
 void cmd_cd(int argc, char *argv[]);
@@ -150,7 +150,7 @@ void cmd_cd(int argc, char *argv[]) {
 
 void pipeline(char *argv[], int narg, int index) {
     int p[2];
-    char *first_argv[50]; // 파이프 해야할 때 두 번째 명령어 저장
+    char *first_argv[50]; // 파이프라인 명령에서 두 번째 명령어 저장
     pid_t pid;
 
     memmove(first_argv, argv, index * sizeof(char *)); // 앞 명령어 new_arg에 저장
@@ -165,11 +165,12 @@ void pipeline(char *argv[], int narg, int index) {
 
     pid = fork();
     if (pid == 0) {
+        close(p[0]);
         dup2(p[1], STDOUT_FILENO);
         execvp(first_argv[0], first_argv);
     }
     else if (pid > 0) {
-        // close(p[1]);
+        close(p[1]);
         dup2(p[0], STDIN_FILENO);
     }
     else {
@@ -181,7 +182,7 @@ void pipeline(char *argv[], int narg, int index) {
 int execute_cmd(int narg, char *argv[]) {
     int status; 
     int is_redirect = 0, is_pipe = 0, is_background = 0;
-    int index[3];
+    int index[3]; // 0:redirect 1:pipeline 2:background, 명령줄에서 기호의 인덱스값
     pid_t pid;
 
     is_redirect = check('<', argv, &index[0], narg) || check('>', argv, &index[0], narg);
