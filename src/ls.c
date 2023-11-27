@@ -65,6 +65,7 @@ void ls(char *dirname) {
         if ((++cnt % 4) == 0)
             printf("\n");
     }
+    printf("\n");
 
     closedir(pdir);
 }
