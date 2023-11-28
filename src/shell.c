@@ -202,23 +202,24 @@ int execute_cmd(int narg, char *argv[]) {
 
     pid = fork();
     if (pid == 0) {
-        if (is_pipe == 1) {
+        if (is_pipe == 1) 
             pipeline(argv, narg, index[1]);
-        }
+        
         if (is_redirect == 1) 
             redirect(narg, argv, index[0]);
-	if (is_background == 1){
-		printf("\nprocess fall in background\n");
-		pid = waitpid(pid,NULL,WNOHANG);
-		argv[narg-1] = NULL;
-		
-	}
+        
+	    if (is_background == 1)
+		    argv[narg-1] = NULL;
+	    
         execvp(argv[0], argv);
         perror("exec");
         exit(1);
     }
     else if (pid >0) {
-        waitpid(pid, &status, 0);
+		if (is_background) 
+            printf("\nprocess fall in background\n");
+        else
+            waitpid(pid, &status, 0);
     }
     else
         perror("fork failed");
