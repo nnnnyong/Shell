@@ -27,10 +27,18 @@ void redirect(int narg, char *argv[], int index);
 void pipeline(char *argv[], int narg, int index);
 void if_ourcmd(char *argv[]); 
 
+void sigint_handler(int signo);
+void sigquit_handler(int signo);
+void sig_int();
+void sig_quit();
+
 int main() {
     char buf[256];
     char *argv[50];
     int narg;
+
+    sig_int();
+    sig_quit();
 
     getcwd(cmdpath, 256);
     strcpy(cur_path, cmdpath);
@@ -135,17 +143,20 @@ void redirect(int narg, char *argv[], int index){
 }
 
 void cmd_cd(int argc, char *argv[]) {
-    if (argc == 1) {
-        argv[1] = getenv("HOME");
-    } else if (argc > 2) {
-        fprintf(stderr, "too many arguments\n");
-        return;
-    }
+    
 
-    if (chdir(argv[1]) < 0) {
-        perror("cd");
-        return;
-    }
+	if (argc == 1) {
+      		argv[1] = getenv("HOME");
+	} else if (argc > 2) {
+       		fprintf(stderr, "too many arguments\n");
+       		return;
+  	}
+	
+    	if (chdir(argv[1]) < 0) {
+        	perror("cd");
+        	return;
+	}
+		
 }
 
 void pipeline(char *argv[], int narg, int index) {
@@ -196,6 +207,12 @@ int execute_cmd(int narg, char *argv[]) {
         }
         if (is_redirect == 1) 
             redirect(narg, argv, index[0]);
+	if (is_background == 1){
+		printf("\nprocess fall in background\n");
+		pid = waitpid(pid,NULL,WNOHANG);
+		argv[narg-1] = NULL;
+		
+	}
         execvp(argv[0], argv);
         perror("exec");
         exit(1);
@@ -208,3 +225,35 @@ int execute_cmd(int narg, char *argv[]) {
     
     return 0;
 }
+
+void sigint_handler(int signo){
+	pid_t ppid = getppid();
+	int stat;
+
+	printf("\n\n SIGINT 발생 \n\n");
+	while((ppid = waitpid(-1, &stat, WNOHANG)) > 0){}
+}
+
+void sigquit_handler(int signo){
+	pid_t ppid = getppid();
+	kill(ppid,SIGQUIT);
+	printf("\nSTOP!!\n");
+	exit(1);
+}
+
+void sig_int(){
+	struct sigaction sig_int;
+
+	sig_int.sa_handler = sigint_handler;
+	sigfillset(&(sig_int.sa_mask));
+	sigaction(SIGINT,&sig_int,NULL);
+}
+
+void sig_quit(){
+	struct sigaction sig_quit;
+
+	sig_quit.sa_handler = sigquit_handler;
+	sigfillset(&(sig_quit.sa_mask));
+	sigaction(SIGTSTP,&sig_quit,NULL);
+}
+
