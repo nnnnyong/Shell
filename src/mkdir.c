@@ -5,15 +5,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-int getdirnames(char **argv, char **dirnames) {
-    int cnt = 0;
-    while ((dirnames[cnt] = strtok(argv[2], "/")) != NULL) { 
-        if (strcmp(dirnames[cnt], ".") == 0)
-            continue;
-        cnt++; 
-    }
-    return cnt;
-}
 void makedir(char *argv, mode_t mode) {
     if (mkdir(argv, mode) < 0) {
         perror("mkdir");
