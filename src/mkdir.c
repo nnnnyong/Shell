@@ -34,15 +34,14 @@ int main(int argc, char *argv[]) {
             len = strlen(argv[2]);
             // 권한 문자열을 8진수로 변환
             for (i = 0; i < len; i++) {
-                if (argv[2][i] < '0' || argv[2][i] > 7){
+                if (argv[2][i] < '0' && argv[2][i] > 7){
                     fprintf(stderr, "invalid mode %s\n", argv[2]);
                     exit(1);
                 }
                 mode = mode * 8 + (argv[2][i] - '0');
             }
             makedir(argv[3], mode);
-            // 원래의 마스크 복구
-            umask(mask);
+	    umask(mask);
         }
         else {
             fprintf(stderr, "mkdir: invalid option -- %s\n", argv[1]);
