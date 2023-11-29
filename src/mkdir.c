@@ -22,8 +22,6 @@ void makedir(char *argv, mode_t mode) {
 }
 int main(int argc, char *argv[]) {
     int i, len;
-    char ch;
-    char *dirnames[256];
     mode_t mode = 0777, mask;
 
     if (argc == 2) {
